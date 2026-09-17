@@ -25,7 +25,7 @@
  *   get_user_context ; le cap front est bypassable). Crédit pro = candidates.max_cv.
  * - GUEST / orphelin : refusé (403 forbidden_no_access).
  * - Enregistre l'usage dans usage_events (org_id, action enum, tokens_used,
- *   cost_eur, entity_type/id, metadata). Le trigger increment_org_usage
+ *   cost_eur, model, entity_type/id, metadata). Le trigger increment_org_usage
  *   incrémente alors usage_cv_current / usage_score_current selon l'action.
  *   user_id = FK vers profiles (staff only) → null pour un élève (attribution
  *   via entity_id = sa fiche candidat).
@@ -69,7 +69,14 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
  * Mapping action front → enum usage_action d'OCTO.
  * ⚠️ Ne jamais mapper une action non-génération vers 'cv_generation' :
  * le trigger increment_org_usage incrémenterait le quota CV à tort.
- * Les actions absentes de ce mapping ne sont pas loguées (mais restent autorisées).
+ * Les actions absentes de ce mapping sont REFUSÉES (400 `unknown_action`,
+ * cf. plus bas) — elles ne l'étaient pas avant le correctif du 2026-09-17,
+ * seulement « pas loguées » : n'importe quel nom d'action inventé atteignait
+ * quand même Anthropic (modèle/messages/tokens fournis par l'appelant), sans
+ * jamais être compté dans `usage_events` ni décompté d'aucun quota — un accès
+ * IA gratuit et invisible, exploitable par le compte le moins privilégié
+ * (élève) comme par le staff. Toute action réellement appelée par ce dépôt
+ * (web-v2 ET altio-cv) DOIT donc figurer ici.
  *
  * `crm_cv_generation` (action envoyée par `web-v2/lib/actions/cvGenerate.ts`,
  * le générateur natif du CRM) DOIT rester mappée ici : sans ça, ces
@@ -138,6 +145,19 @@ const ACTION_ENUM: Record<string, string> = {
   // en amont, côté Server Action (candidate_opportunites, 5/mois/élève).
   // Reste mappée pour que le coût apparaisse dans le dashboard Usage IA.
   crm_offre_externe_analyse: 'offre_externe_analyse',
+  // Brouillon de message IA pour une alerte décrochage (lib/actions/decrochageAi.ts,
+  // onglet Alertes de Pédagogie) — le score de risque reste calculé en dur
+  // (lib/decrochageHelpers.ts), seule la rédaction du message est confiée au
+  // modèle. Valeur d'enum dédiée (migration 20260908l) plutôt qu'un
+  // rattachement à 'accroche_generation' : contexte et seuils différents,
+  // fausserait la ventilation du dashboard Usage IA.
+  crm_decrochage_message:   'decrochage_message',
+  // Génération IA de questions pour la banque de compétences/connaissances
+  // (lib/actions/questionGenerationAi.ts, onglet Pédagogie → Test → Banque
+  // de questions). Ne lit ni n'écrit aucun dossier candidat — génère du
+  // contenu de test, proposé à la relecture avant publication (jamais
+  // inséré directement). Valeur d'enum dédiée (migration 20260910f).
+  crm_question_generation: 'question_generation',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
@@ -196,6 +216,10 @@ Deno.serve(async (req) => {
     // 'crm_score_profil') la faisait tomber dans son bucket 'free', donc
     // sans plafond, quel que soit le contenu d'ACTION_ENUM ci-dessus.
     const enumAction = ACTION_ENUM[action] ?? null;
+    if (!enumAction) {
+      console.error('[claude-proxy] action inconnue:', action);
+      return json({ error: 'unknown_action' }, 400);
+    }
     const isCvGen = enumAction === 'cv_generation';
 
     // ── Contexte unifié (staff | student | guest) via RPC SECURITY DEFINER ──
@@ -239,9 +263,14 @@ Deno.serve(async (req) => {
       // soumis à ce contrôle. Le consentement est vérifié pour CHAQUE candidat
       // ciblé par la requête, quelle que soit l'action.
       if (candidateIds.length) {
+        // `.eq('org_id', orgId)` : sans ce filtre, un `candidate_id` d'une
+        // AUTRE organisation renvoyait quand même une ligne — un staff pouvait
+        // s'en servir comme oracle pour savoir si un UUID candidat externe
+        // existe et a donné son consentement RGPD.
         const { data: cands } = await supabaseAdmin
           .from('candidates')
           .select('id, consent_given')
+          .eq('org_id', orgId)
           .in('id', candidateIds);
         const consentById = new Map(
           (cands ?? []).map((c: { id: string; consent_given: boolean }) => [c.id, c.consent_given])
@@ -318,6 +347,7 @@ Deno.serve(async (req) => {
         action:      enumAction,
         tokens_used: inputTokens + outputTokens,
         cost_eur:    costEur,
+        model,
         entity_type: entityId ? 'candidate' : null,
         entity_id:   entityId,
         metadata:    metadata ?? {},
