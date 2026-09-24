@@ -158,6 +158,14 @@ const ACTION_ENUM: Record<string, string> = {
   // contenu de test, proposé à la relecture avant publication (jamais
   // inséré directement). Valeur d'enum dédiée (migration 20260910f).
   crm_question_generation: 'question_generation',
+  // Analyse assistée du profil LinkedIn (audit backlog §E4,
+  // lib/actions/candidatLinkedin.ts) — appelée par l'ÉLÈVE (kind=student),
+  // donc PAS soumise au quota org de check_quota (branche staff uniquement,
+  // cf. plus bas) : le plafond réel (3/mois/élève) est appliqué en amont,
+  // côté Server Action, même construction que crm_offre_externe_analyse.
+  // Valeur d'enum dédiée (migration 20260922i) : nature différente d'une
+  // offre d'emploi, fausserait la ventilation du dashboard Usage IA sinon.
+  crm_linkedin_analyse: 'linkedin_analyse',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
