@@ -13,6 +13,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { track } from '@/lib/monitoring';
+import { IS_ECOLE } from '@/lib/appMode';
 
 // ─── Tokens visuels ────────────────────────────────────────────────────────
 const C = {
@@ -185,6 +186,27 @@ function UpgradeModal({ action, used, limit, tier, onClose }) {
           </p>
         </div>
 
+        {IS_ECOLE ? (
+          /* Version école : pas d'offre à vendre — la limite est fixée par
+             l'école (plafond de CV réglable sur la fiche de l'élève). */
+          <div style={{ padding: '22px 28px 24px' }}>
+            <p style={{ fontSize: 13.5, color: C.ink2, lineHeight: 1.55, margin: '0 0 18px' }}>
+              Cette limite est fixée par ton école. Demande à ton chargé d’admission ou à ta direction de
+              l’augmenter si tu as besoin de plus.
+            </p>
+            <button
+              onClick={onClose}
+              style={{
+                width: '100%', padding: '11px 20px', border: 'none', borderRadius: 10,
+                background: `linear-gradient(135deg, ${C.primary}, ${C.primaryDk})`, color: '#fff',
+                fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Compris
+            </button>
+          </div>
+        ) : (
+        <>
         {/* Corps : avantages plan supérieur */}
         <div style={{ padding: '24px 28px 8px' }}>
           <div style={{
@@ -264,6 +286,8 @@ function UpgradeModal({ action, used, limit, tier, onClose }) {
             ✨ Découvrir les plans
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

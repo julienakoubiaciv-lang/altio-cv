@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx';
@@ -7,6 +7,8 @@ import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import ProgressSync from './components/ProgressSync.jsx';
+import EcoleGate from './components/EcoleGate.jsx';
+import { IS_ECOLE } from './lib/appMode';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
@@ -78,7 +80,7 @@ function GatedRoutes() {
     );
   }
 
-  return (
+  const routes = (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/"            element={<Home />} />
@@ -91,7 +93,8 @@ function GatedRoutes() {
         <Route path="/profils"            element={<Profiles />} />
         <Route path="/profils/nouveau"    element={<ProfileWizard />} />
         <Route path="/profils/:id/editer" element={<ProfileWizard />} />
-        <Route path="/pricing"            element={<Pricing />} />
+        {/* Pas de tarifs dans la version école : l'accès y est fourni par l'école. */}
+        <Route path="/pricing"            element={IS_ECOLE ? <Navigate to="/" replace /> : <Pricing />} />
         <Route path="/admin"              element={<Admin />} />
         <Route path="/entretien"          element={<Interview />} />
         <Route path="/metiers"            element={<Jobs />} />
@@ -110,6 +113,9 @@ function GatedRoutes() {
       </Routes>
     </Suspense>
   );
+
+  // Version école : connexion avec le compte CRM obligatoire (cf. EcoleGate).
+  return IS_ECOLE ? <EcoleGate fallback={<PageLoader />}>{routes}</EcoleGate> : routes;
 }
 
 export default function App() {

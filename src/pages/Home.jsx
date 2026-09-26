@@ -24,6 +24,7 @@ import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
 import { useUserContext } from '@/hooks/useUserContext';
 import EspaceEtudiant from '@/components/espace/EspaceEtudiant.jsx';
+import { IS_ECOLE } from '@/lib/appMode';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -1334,7 +1335,7 @@ export default function Home() {
                 <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{plan?.emoji} Forfait {plan?.label}</div>
                 {isSchool && orgName && <div style={{ fontSize: 12.5, color: C.ok, fontWeight: 700, marginTop: 2 }}>🎓 Accès offert par {orgName}</div>}
               </div>
-              {!isSchool && nextPlan && (
+              {!isSchool && !IS_ECOLE && nextPlan && (
                 <button onClick={() => navigate('/pricing')} style={{ background: C.bluePrimary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}>Passer à {nextPlan}</button>
               )}
             </div>
