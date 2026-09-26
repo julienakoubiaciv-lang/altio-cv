@@ -23,6 +23,7 @@ import { useRole } from '@/hooks/useRole';
 import { useOrg } from '@/hooks/useOrg';
 import { useUserContext } from '@/hooks/useUserContext';
 import { PLANS, betterTier } from '@/lib/planConfig';
+import { staffAccesComplet } from '@/lib/appMode';
 
 export function useEntitlements() {
   const plan = usePlan();
@@ -32,7 +33,11 @@ export function useEntitlements() {
 
   // ── Mode élève : écrase tout (voir en-tête). Un élève n'est jamais staff.
   const isStudent = ctx.isStudent;
-  const isStaff = !isStudent && roleStaff;
+  // Staff = owner/admin (useRole), OU un rôle staff du CRM autorisé
+  // (direction, admission, relation entreprise — cf. lib/appMode.js). Avant,
+  // seul `admin` était reconnu : un CRE ou un chargé d'admission connecté avec
+  // son compte CRM retombait sur l'offre gratuite (2 CV).
+  const isStaff = !isStudent && (roleStaff || (ctx.isStaff && staffAccesComplet(ctx.role)));
 
   const tier = isStudent ? 'student' : betterTier(plan.tier, orgTier);
   const baseEff = PLANS[tier] || PLANS.free;

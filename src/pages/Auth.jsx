@@ -9,6 +9,7 @@ import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabaseReady } from '@/lib/supabase';
+import { IS_ECOLE } from '@/lib/appMode';
 
 const C = {
   blue:    'var(--altio-blue)',
@@ -80,7 +81,9 @@ export default function Auth() {
   const [params]        = useSearchParams();
   const { signIn, signUp } = useAuth();
 
-  const defaultTab = params.get('tab') === 'inscription' ? 'inscription' : 'connexion';
+  // Version école : pas d'inscription — on se connecte avec le compte déjà
+  // créé par le CRM (équipe) ou par l'invitation de l'espace étudiant (élève).
+  const defaultTab = !IS_ECOLE && params.get('tab') === 'inscription' ? 'inscription' : 'connexion';
   const [tab,      setTab]      = useState(defaultTab);
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -161,14 +164,17 @@ export default function Auth() {
           }}>📄</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: C.ink }}>Altio CV</div>
           <div style={{ fontSize: 13, color: C.mute, marginTop: 2 }}>
-            {tab === 'connexion' ? 'Connecte-toi à ton compte' : 'Crée ton compte gratuitement'}
+            {IS_ECOLE
+              ? 'Connecte-toi avec ton compte Altio — le même que ton espace étudiant ou le CRM'
+              : tab === 'connexion' ? 'Connecte-toi à ton compte' : 'Crée ton compte gratuitement'}
           </div>
         </div>
 
         {/* Card */}
         <div style={{ background: C.bg, borderRadius: 18, border: `1px solid ${C.rule}`, padding: '28px 28px 24px', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
 
-          {/* Tabs */}
+          {/* Tabs — masqués en version école (connexion seule) */}
+          {!IS_ECOLE && (
           <div style={{ display: 'flex', gap: 0, marginBottom: 24, background: C.surface, borderRadius: 10, padding: 3 }}>
             {[{ id: 'connexion', label: 'Connexion' }, { id: 'inscription', label: 'Inscription' }].map(t => (
               <button key={t.id} onClick={() => { setTab(t.id); setError(''); setSuccess(''); }}
@@ -184,6 +190,7 @@ export default function Auth() {
               </button>
             ))}
           </div>
+          )}
 
           {/* Feedback */}
           {error && (
@@ -239,32 +246,44 @@ export default function Auth() {
             </div>
           </form>
 
-          {/* Séparateur */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 16px' }}>
-            <div style={{ flex: 1, height: 1, background: C.rule }} />
-            <span style={{ fontSize: 11, color: C.mute, fontWeight: 500 }}>ou</span>
-            <div style={{ flex: 1, height: 1, background: C.rule }} />
-          </div>
+          {/* « Continuer sans compte » : pas en version école, réservée aux comptes du CRM. */}
+          {!IS_ECOLE && (
+            <>
+            {/* Séparateur */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 16px' }}>
+              <div style={{ flex: 1, height: 1, background: C.rule }} />
+              <span style={{ fontSize: 11, color: C.mute, fontWeight: 500 }}>ou</span>
+              <div style={{ flex: 1, height: 1, background: C.rule }} />
+            </div>
 
-          {/* Continuer sans compte */}
-          <button onClick={() => navigate('/')}
-            style={{
-              width: '100%', padding: '10px 0', borderRadius: 9, fontSize: 13, fontWeight: 600,
-              background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`,
-              cursor: 'pointer', fontFamily: FONT, transition: 'all .15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
-            onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}
-          >
-            Continuer sans compte
-          </button>
+            {/* Continuer sans compte */}
+            <button onClick={() => navigate('/')}
+              style={{
+                width: '100%', padding: '10px 0', borderRadius: 9, fontSize: 13, fontWeight: 600,
+                background: C.surface, color: C.ink2, border: `1px solid ${C.rule}`,
+                cursor: 'pointer', fontFamily: FONT, transition: 'all .15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
+              onMouseLeave={e => e.currentTarget.style.borderColor = C.rule}
+            >
+              Continuer sans compte
+            </button>
+            </>
+          )}
         </div>
 
-        {/* Note anonyme */}
+        {/* Note anonyme — sans objet en version école */}
+        {IS_ECOLE ? (
+          <p style={{ textAlign: 'center', fontSize: 11, color: C.mute, marginTop: 16, lineHeight: 1.6 }}>
+            Mot de passe oublié ? Réinitialise-le depuis ton espace étudiant ou le CRM,
+            <br />ou demande à ton école.
+          </p>
+        ) : (
         <p style={{ textAlign: 'center', fontSize: 11, color: C.mute, marginTop: 16, lineHeight: 1.6 }}>
           Sans compte, tes CVs sont sauvegardés localement sur cet appareil.<br />
           Un compte te permet de les retrouver partout.
         </p>
+        )}
       </div>
     </div>
   );
