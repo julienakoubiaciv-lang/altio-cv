@@ -110,6 +110,8 @@ function GatedRoutes() {
         <Route path="/confidentialite"    element={<Confidentialite />} />
         <Route path="/mentions-legales"   element={<MentionsLegales />} />
         <Route path="/cgu"                element={<CGU />} />
+        {/* Adresse inconnue → accueil, plutôt qu'une page blanche. */}
+        <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
