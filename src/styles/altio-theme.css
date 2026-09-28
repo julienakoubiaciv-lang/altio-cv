@@ -171,3 +171,14 @@ html[data-theme="dark"] {
   --ease-out:    cubic-bezier(.16, 1, .3, 1);
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
+
+/* Version école (VITE_APP_MODE=ecole, cf. main.jsx) : même bleu et même fond
+   que l'espace étudiant du CRM (web-v2 globals.css : --color-navy #1a4fd6,
+   --color-canvas #f4f6fb), pour que l'élève ne sente pas le changement
+   d'application en passant de l'un à l'autre. Mode clair seulement : le mode
+   sombre des deux applications est déjà proche. */
+html[data-app-mode="ecole"]:not([data-theme="dark"]) {
+  --altio-blue:       #1A4FD6;
+  --altio-blue-hover: #123C9E;
+  --altio-bg:         #F4F6FB;
+}

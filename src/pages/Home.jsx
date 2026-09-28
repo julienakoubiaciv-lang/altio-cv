@@ -25,7 +25,8 @@ import EnergyBar from '@/components/EnergyBar';
 import { useUserContext } from '@/hooks/useUserContext';
 import EspaceEtudiant from '@/components/espace/EspaceEtudiant.jsx';
 import { IS_ECOLE } from '@/lib/appMode';
-import { modulesAccueil } from '@/lib/espaceEtudiant';
+import { modulesAccueil, urlCarriere } from '@/lib/espaceEtudiant';
+import AccueilEcole from '@/components/ecole/AccueilEcole';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -799,6 +800,16 @@ export default function Home() {
           )}
         </div>
 
+        {/* Version école : retour à l'espace étudiant, où vivent le suivi et
+            les candidatures (« Mon espace » n'est plus dupliqué ici). */}
+        {IS_ECOLE && isStudent && (
+          <a href={urlCarriere()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: isMobile ? 4 : 16, padding: isMobile ? '7px 10px' : '8px 14px',
+              borderRadius: 10, border: `1px solid ${C.rule}`, background: C.card, color: C.bluePrimary, fontSize: isMobile ? 12 : 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            ← {isMobile ? 'Mon espace' : 'Mon espace étudiant'}
+          </a>
+        )}
+
         <div style={{ flex: 1 }} />
 
         {/* Parrainage école (accès offert) */}
@@ -816,10 +827,15 @@ export default function Home() {
 
       {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
-        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} showEspace={isStudent} />
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} showEspace={isStudent && !IS_ECOLE} />
         <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
 
-        {section === 'home' && (
+        {section === 'home' && IS_ECOLE && (
+          <AccueilEcole cvList={cvList} firstName={firstName} isStudent={isStudent} isMobile={isMobile}
+            navigate={navigate} onModify={handleModify} onVoirTout={() => setSection('cv')} />
+        )}
+
+        {section === 'home' && !IS_ECOLE && (
         <>
         {/* Tableau de bord */}
         <div style={{ marginBottom: isMobile ? 16 : 22 }}>
