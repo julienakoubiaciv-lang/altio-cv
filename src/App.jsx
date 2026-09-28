@@ -29,7 +29,9 @@ const Auth          = lazy(() => import('./pages/Auth.jsx'));
 const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
 const Admin         = lazy(() => import('./pages/Admin.jsx'));
 const Interview     = lazy(() => import('./pages/Interview.jsx'));
-// Version école : le simulateur est dans l'espace étudiant (lib/espaceEtudiant.js).
+// Version école : le simulateur est dans l'espace étudiant (lib/espaceEtudiant.js),
+// et l'élève crée ses CV avec l'assistant en trois étapes (NouveauCvEcole).
+const NouveauCvEcole = lazy(() => import('./pages/NouveauCvEcole.jsx'));
 const EntretienEcole = lazy(() => import('./pages/EntretienEcole.jsx'));
 const Jobs          = lazy(() => import('./pages/Jobs.jsx'));
 const Journey       = lazy(() => import('./pages/Journey.jsx'));
@@ -87,7 +89,7 @@ function GatedRoutes() {
       <Routes>
         <Route path="/"            element={<Home />} />
         <Route path="/auth"        element={<Auth />} />
-        <Route path="/generate"    element={<Generate />} />
+        <Route path="/generate"    element={IS_ECOLE ? <NouveauCvEcole /> : <Generate />} />
         <Route path="/bulk"        element={<Bulk />} />
         <Route path="/editor"      element={<Editor />} />
         <Route path="/editor/:id"  element={<Editor />} />
