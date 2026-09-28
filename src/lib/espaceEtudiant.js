@@ -18,6 +18,11 @@ export function urlEspaceEtudiant(env = import.meta.env.VITE_ESPACE_ETUDIANT_URL
   return url || URL_ESPACE_ETUDIANT_DEFAUT;
 }
 
+/** Accueil de l'espace Carrière : retour depuis le générateur. */
+export function urlCarriere(env) {
+  return `${urlEspaceEtudiant(env)}/candidat?tab=carriere`;
+}
+
 /** Onglet « M'entraîner » de l'espace Carrière. */
 export function urlEntrainement(env) {
   return `${urlEspaceEtudiant(env)}/candidat?tab=entrainement`;
@@ -26,7 +31,15 @@ export function urlEntrainement(env) {
 /** Route du simulateur d'entretien du générateur. */
 export const ROUTE_SIMULATEUR = '/entretien';
 
-/** Modules de l'accueil : sans le simulateur en version école. */
+/**
+ * Modules masqués en version école, parce que l'espace étudiant les porte
+ * déjà : le simulateur (« M'entraîner »), et la progression gamifiée
+ * (parcours XP, bilan d'employabilité) — une seule jauge pour l'élève,
+ * « Prêt pour l'alternance » dans son espace.
+ */
+export const ROUTES_MASQUEES_ECOLE = [ROUTE_SIMULATEUR, '/parcours', '/diagnostic'];
+
+/** Modules de la préparation : sans ceux que l'espace étudiant porte, en version école. */
 export function modulesAccueil(modules, isEcole = IS_ECOLE) {
-  return isEcole ? modules.filter((m) => m.route !== ROUTE_SIMULATEUR) : modules;
+  return isEcole ? modules.filter((m) => !ROUTES_MASQUEES_ECOLE.includes(m.route)) : modules;
 }
