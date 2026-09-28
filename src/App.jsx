@@ -29,6 +29,8 @@ const Auth          = lazy(() => import('./pages/Auth.jsx'));
 const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
 const Admin         = lazy(() => import('./pages/Admin.jsx'));
 const Interview     = lazy(() => import('./pages/Interview.jsx'));
+// Version école : le simulateur est dans l'espace étudiant (lib/espaceEtudiant.js).
+const EntretienEcole = lazy(() => import('./pages/EntretienEcole.jsx'));
 const Jobs          = lazy(() => import('./pages/Jobs.jsx'));
 const Journey       = lazy(() => import('./pages/Journey.jsx'));
 const LetterWriter  = lazy(() => import('./pages/LetterWriter.jsx'));
@@ -96,7 +98,7 @@ function GatedRoutes() {
         {/* Pas de tarifs dans la version école : l'accès y est fourni par l'école. */}
         <Route path="/pricing"            element={IS_ECOLE ? <Navigate to="/" replace /> : <Pricing />} />
         <Route path="/admin"              element={<Admin />} />
-        <Route path="/entretien"          element={<Interview />} />
+        <Route path="/entretien"          element={IS_ECOLE ? <EntretienEcole /> : <Interview />} />
         <Route path="/metiers"            element={<Jobs />} />
         <Route path="/parcours"           element={<Journey />} />
         <Route path="/lettre"             element={<LetterWriter />} />
