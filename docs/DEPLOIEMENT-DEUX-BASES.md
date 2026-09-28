@@ -13,17 +13,18 @@ Seules les **variables d'environnement** changent d'une version à l'autre.
 
 ## Version école
 
-Dans Cloudflare → Workers & Pages → créer un second Worker (par ex. `altio-cv-ecole`) relié au même dépôt, avec comme variables de build :
+Dans Cloudflare → Workers & Pages → créer un second Worker (par ex. `altio-cv-ecole`) relié au même dépôt, avec :
 
-| Variable | Valeur |
+| Réglage (Settings → Build) | Valeur |
 |---|---|
-| `VITE_APP_MODE` | `ecole` |
-| `VITE_SUPABASE_URL` | `https://zxiroikfhrwsyzgqflzb.supabase.co` (base du CRM) |
-| `VITE_SUPABASE_ANON_KEY` | la clé publique (anon / publishable) du projet CRM |
+| Build command | `npm install --legacy-peer-deps && npm run build -- --mode ecole` |
+| Deploy command | `npx wrangler deploy --name altio-cv-ecole` |
+
+**Aucune variable à saisir dans Cloudflare** : `--mode ecole` fait lire à Vite le fichier `.env.ecole` du dépôt, qui contient `VITE_APP_MODE=ecole`, l'adresse et la clé publique (anon) du projet CRM. Ces deux valeurs sont publiques (elles sont de toute façon dans le JavaScript servi au navigateur) ; la protection vient de la RLS. Si des variables `VITE_*` traînent dans le Worker, les supprimer : une variable de build Cloudflare l'emporte sur le fichier.
 
 Puis rattacher le domaine `cv-ecole.altio-wave.com` à ce Worker.
 
-Dans Supabase (projet CRM) → Authentication → URL Configuration : ajouter `https://cv-ecole.altio-wave.com` aux **Redirect URLs**.
+Dans Supabase, projet **CRM** (`zxiroikfhrwsyzgqflzb`, pas le projet grand public) → Authentication → URL Configuration : ajouter `https://cv-ecole.altio-wave.com/**` aux **Redirect URLs**.
 
 Ce que fait `VITE_APP_MODE=ecole` (cf. `src/lib/appMode.js`) :
 
