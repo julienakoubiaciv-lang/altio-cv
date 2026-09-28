@@ -18,7 +18,7 @@
  * Les autres sections (expériences, formation…) sont accessibles via le breadcrumb.
  */
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   PALETTES,
   saveEditorState, loadEditorState,
@@ -36,6 +36,9 @@ import { useEditorLayout } from '@/hooks/useEditorLayout';
 import { injectWatermark, shouldWatermark } from '@/lib/watermark';
 import { track } from '@/lib/monitoring';
 import CVFeedbackPanel from '@/components/CVFeedbackPanel.jsx';
+import GuideCompletude from '@/components/editor/GuideCompletude.jsx';
+import { IS_ECOLE } from '@/lib/appMode';
+import { guideCompletude } from '@/lib/creationCv';
 
 // ─── Tokens visuels du design ──────────────────────────────────────────────
 const TOK = {
@@ -162,6 +165,8 @@ function isStepComplete(stepId, d) {
 export default function EditorAtelier() {
   const navigate = useNavigate();
   const { id: routeId } = useParams();
+  // Arrivée depuis l'assistant « Nouveau CV » (version école) : le guide le signale.
+  const nouveauCv = Boolean(useLocation().state?.nouveauCv);
   const { user } = useAuth();
   const { isStaff } = useRole();
   const { tier } = usePlan();
@@ -463,8 +468,11 @@ export default function EditorAtelier() {
     );
   }
 
-  const tasks = computeTasks(edFields);
-  const score = computeScore(edFields);
+  // Version école : la complétude de l'espace étudiant (seuil des offres) et
+  // ses 3 actions remplacent le score et les tâches propres à l'éditeur.
+  const guide = IS_ECOLE ? guideCompletude(edFields, croppedPhoto) : null;
+  const tasks = guide ? [] : computeTasks(edFields);
+  const score = guide ? guide.pct : computeScore(edFields);
   const tasksPts = tasks.reduce((s, t) => s + t.pts, 0);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -472,7 +480,7 @@ export default function EditorAtelier() {
     <div style={{
       width: '100%', minHeight: '100vh', background: TOK.shellBg,
       fontFamily: FONT, color: TOK.ink,
-      display: 'grid', gridTemplateRows: '48px auto 1fr',
+      display: 'grid', gridTemplateRows: guide ? '48px auto auto 1fr' : '48px auto 1fr',
     }}>
       <style>{`@keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
       {/* ──────────────────────── TOPBAR ──────────────────────── */}
@@ -490,6 +498,7 @@ export default function EditorAtelier() {
 
       {/* ──────────────── FIL DES ÉTAPES (sous la topbar) ──────────────── */}
       <StepsBar currentStep={currentStep} onStepChange={setCurrentStep} fields={edFields} />
+      {guide && <GuideCompletude guide={guide} nouveauCv={nouveauCv} onAller={setCurrentStep} />}
 
       {/* ──────────────────────── BODY (3 colonnes) ──────────────────────── */}
       <div style={{
@@ -527,6 +536,7 @@ export default function EditorAtelier() {
           score={score}
           tasks={tasks}
           tasksPts={tasksPts}
+          masquerTaches={!!guide}
         />
 
         {/* ── COLONNE DROITE : DESIGN ── */}
@@ -1143,7 +1153,7 @@ function InteretsStep({ fields, onUpdate }) {
 // ═══════════════════════════════════════════════════════════════════════════
 //                            COLONNE CENTRE (APERÇU)
 // ═══════════════════════════════════════════════════════════════════════════
-function CenterPreview({ iframeRef, html, zoom, onZoomIn, onZoomOut, onZoomFit, score, tasks, tasksPts }) {
+function CenterPreview({ iframeRef, html, zoom, onZoomIn, onZoomOut, onZoomFit, score, tasks, tasksPts, masquerTaches }) {
   return (
     <div style={{
       background: TOK.canvasBg,
@@ -1201,8 +1211,8 @@ function CenterPreview({ iframeRef, html, zoom, onZoomIn, onZoomOut, onZoomFit, 
         </div>
       </div>
 
-      {/* Bottom rail : tâches */}
-      <div style={{ padding: '14px 24px 18px' }}>
+      {/* Bottom rail : tâches (en version école, le guide de complétude les remplace) */}
+      {!masquerTaches && <div style={{ padding: '14px 24px 18px' }}>
         <div style={{
           background: '#fff', borderRadius: 12, border: `1px solid ${TOK.line}`,
           boxShadow: TOK.shadowSm, padding: '10px 14px',
@@ -1229,7 +1239,7 @@ function CenterPreview({ iframeRef, html, zoom, onZoomIn, onZoomOut, onZoomFit, 
             <TaskChip key={i} pts={t.pts} label={t.label} time={t.time} />
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
