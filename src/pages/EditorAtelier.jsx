@@ -25,7 +25,7 @@ import {
 } from '@/lib/cvData';
 import { TEMPLATES, renderCVFromData } from '@/lib/cvTemplates';
 import {
-  saveHistory, updateHistory, getHistorySync,
+  saveHistory, updateHistory, getHistorySync, findHistoryEntry,
 } from '@/lib/historySync';
 import { uploadMedia } from '@/lib/mediaUpload';
 import { loadScript, loadCSS } from '@/lib/editorHelpers.js';
@@ -214,11 +214,27 @@ export default function EditorAtelier() {
   }, []);
 
   // ── Chargement initial du CV ─────────────────────────────────────────────
+  // CV absent du cache local (lien ouvert depuis l'espace étudiant, autre
+  // appareil) : on le cherche dans Supabase avant de charger. `undefined` =
+  // pas encore cherché, `null` = introuvable.
+  const [cloudEntry, setCloudEntry] = useState(undefined);
+  useEffect(() => {
+    setCloudEntry(undefined);
+    if (!routeId || getHistorySync().some(h => String(h.id) === String(routeId))) return;
+    let actif = true;
+    findHistoryEntry(routeId).then(e => { if (actif) setCloudEntry(e); }).catch(() => { if (actif) setCloudEntry(null); });
+    return () => { actif = false; };
+  }, [routeId]);
+
   useEffect(() => {
     let s = null;
     if (routeId) {
       const hist = getHistorySync();
-      const entry = hist.find(h => String(h.id) === String(routeId));
+      const entry = hist.find(h => String(h.id) === String(routeId)) ?? cloudEntry;
+      // En attente de Supabase : ne rien charger, surtout pas le dernier CV édité.
+      if (!entry && cloudEntry === undefined) return;
+      // Introuvable : ne pas ouvrir un autre CV à la place de celui demandé.
+      if (!entry) { setNoCVState(true); return; }
       if (entry) {
         // Récupérer photo/logo depuis URL OU base64 embedded
         let recoveredPhoto = entry.photoUrl || '';
@@ -259,7 +275,7 @@ export default function EditorAtelier() {
     setLogoDataURL(s.logoDataURL || '');
     setCandidateName(s.name || '');
     setTemplateId(s.templateId || 'classic');
-  }, [routeId]);
+  }, [routeId, cloudEntry]);
 
   // ── Rendu HTML quand edFields ou template change ─────────────────────────
   // Utilise srcDoc plutôt que doc.write (plus fiable, pas de race condition)

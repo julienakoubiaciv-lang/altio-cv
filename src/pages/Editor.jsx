@@ -7,7 +7,7 @@ import {
 } from '@/lib/cvData';
 import { TEMPLATES, SIDEBAR_TEXTURES, renderCVFromData } from '@/lib/cvTemplates';
 import {
-  saveHistory, updateHistory, getHistorySync,
+  saveHistory, updateHistory, getHistorySync, findHistoryEntry,
 } from '@/lib/historySync';
 import { uploadMedia } from '@/lib/mediaUpload';
 import { getProfiles, buildProfileContext } from '@/lib/profileData';
@@ -244,12 +244,28 @@ export default function Editor() {
   }, []);
 
   /* ── load state from localStorage (or history by id) ──────────────────── */
+  // CV absent du cache local (lien ouvert depuis l'espace étudiant, autre
+  // appareil) : on le cherche dans Supabase avant de charger. `undefined` =
+  // pas encore cherché, `null` = introuvable.
+  const [cloudEntry, setCloudEntry] = useState(undefined);
+  useEffect(() => {
+    setCloudEntry(undefined);
+    if (!routeId || getHistorySync().some(h => String(h.id) === String(routeId))) return;
+    let actif = true;
+    findHistoryEntry(routeId).then(e => { if (actif) setCloudEntry(e); }).catch(() => { if (actif) setCloudEntry(null); });
+    return () => { actif = false; };
+  }, [routeId]);
+
   useEffect(() => {
     // Si on arrive avec un id (ex: depuis le batch), charger depuis l'historique
     let s = null;
     if (routeId) {
       const hist = getHistorySync();
-      const entry = hist.find(h => String(h.id) === String(routeId));
+      const entry = hist.find(h => String(h.id) === String(routeId)) ?? cloudEntry;
+      // En attente de Supabase : ne rien charger, surtout pas le dernier CV édité.
+      if (!entry && cloudEntry === undefined) return;
+      // Introuvable : ne pas ouvrir un autre CV à la place de celui demandé.
+      if (!entry) { setNoCVState(true); return; }
       if (entry) {
         // Extraire la photo & logo depuis entry.html (cas dev local sans Supabase)
         // OU depuis entry.photoUrl/logoUrl (cas prod avec Supabase Storage)
@@ -315,7 +331,7 @@ export default function Editor() {
 
     setupDone.current = false;
     setGeneratedHTML(freshHtml);
-  }, [routeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [routeId, cloudEntry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── close cv picker on outside click ─────────────────────────────────── */
   useEffect(() => {

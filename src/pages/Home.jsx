@@ -25,6 +25,7 @@ import EnergyBar from '@/components/EnergyBar';
 import { useUserContext } from '@/hooks/useUserContext';
 import EspaceEtudiant from '@/components/espace/EspaceEtudiant.jsx';
 import { IS_ECOLE } from '@/lib/appMode';
+import { modulesAccueil } from '@/lib/espaceEtudiant';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -963,7 +964,7 @@ export default function Home() {
           gap: isMobile ? 10 : 14,
           marginBottom: isMobile ? 24 : 36,
         }}>
-          {HOME_MODULES.map((m, i) => (
+          {modulesAccueil(HOME_MODULES).map((m, i) => (
             <div key={m.route} onClick={() => navigate(m.route)}
               style={{
                 display: 'flex', flexDirection: 'column', gap: 7,
