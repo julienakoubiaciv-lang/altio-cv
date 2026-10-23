@@ -58,11 +58,13 @@ const corsHeaders = {
 };
 
 // Coût estimé en USD pour 1M tokens (entrée / sortie).
+// Tarifs Anthropic vérifiés le 23/10/2026 (Haiku 4.5 : 1 / 5 $, pas 0,25 / 1,25 $
+// qui était le tarif de Haiku 3 ; Opus 4.8 : 5 / 25 $, pas 15 / 75 $).
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-haiku-4-5-20251001': { input: 0.25,  output: 1.25  },
-  'claude-haiku-4-5':          { input: 0.25,  output: 1.25  },
+  'claude-haiku-4-5-20251001': { input: 1.00,  output: 5.00  },
+  'claude-haiku-4-5':          { input: 1.00,  output: 5.00  },
   'claude-sonnet-4-6':         { input: 3.00,  output: 15.00 },
-  'claude-opus-4-8':           { input: 15.00, output: 75.00 },
+  'claude-opus-4-8':           { input: 5.00,  output: 25.00 },
 };
 
 /**
