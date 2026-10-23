@@ -168,6 +168,15 @@ const ACTION_ENUM: Record<string, string> = {
   // Valeur d'enum dédiée (migration 20260922i) : nature différente d'une
   // offre d'emploi, fausserait la ventilation du dashboard Usage IA sinon.
   crm_linkedin_analyse: 'linkedin_analyse',
+  // Lettre de motivation de l'élève (lib/actions/lettreMotivation.ts) —
+  // appelée par l'ÉLÈVE, même construction que crm_linkedin_analyse : le
+  // plafond réel (10/mois/élève) est appliqué côté Server Action. Valeur
+  // d'enum dédiée (migration 20261023f).
+  crm_lettre_motivation: 'lettre_motivation',
+  // Réécriture IA par l'élève dans l'éditeur de son CV (lib/actions/cvAiRewrite.ts) :
+  // plafond mensuel côté Server Action (30/élève). Hors 'cv_generation' pour ne
+  // pas consommer le crédit de CV de l'élève (migration 20261023h).
+  crm_cv_reecriture_eleve: 'cv_reecriture',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
