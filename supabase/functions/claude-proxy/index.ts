@@ -177,6 +177,10 @@ const ACTION_ENUM: Record<string, string> = {
   // plafond mensuel côté Server Action (30/élève). Hors 'cv_generation' pour ne
   // pas consommer le crédit de CV de l'élève (migration 20261023h).
   crm_cv_reecriture_eleve: 'cv_reecriture',
+  // Réponse libre au simulateur d'entretien (lib/actions/entretienLibre.ts) :
+  // appelée par l'ÉLÈVE, plafond mensuel côté Server Action (table
+  // entretien_reponses_libres). Valeur d'enum dédiée (migration 20261030b).
+  crm_entretien_libre: 'entretien_libre',
 };
 
 function estimateCostUsd(model: string, inputTokens: number, cachedTokens: number, outputTokens: number): number {
