@@ -24,6 +24,9 @@ import { useTheme } from '@/hooks/useTheme.jsx';
 import EnergyBar from '@/components/EnergyBar';
 import { useUserContext } from '@/hooks/useUserContext';
 import EspaceEtudiant from '@/components/espace/EspaceEtudiant.jsx';
+import { IS_ECOLE } from '@/lib/appMode';
+import { modulesAccueil, urlCarriere } from '@/lib/espaceEtudiant';
+import AccueilEcole from '@/components/ecole/AccueilEcole';
 
 /* ─── Design tokens ─────────────────────────────────────────────────────── */
 const C = {
@@ -797,6 +800,16 @@ export default function Home() {
           )}
         </div>
 
+        {/* Version école : retour à l'espace étudiant, où vivent le suivi et
+            les candidatures (« Mon espace » n'est plus dupliqué ici). */}
+        {IS_ECOLE && isStudent && (
+          <a href={urlCarriere()}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: isMobile ? 4 : 16, padding: isMobile ? '7px 10px' : '8px 14px',
+              borderRadius: 10, border: `1px solid ${C.rule}`, background: C.card, color: C.bluePrimary, fontSize: isMobile ? 12 : 13, fontWeight: 800, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            ← {isMobile ? 'Mon espace' : 'Mon espace étudiant'}
+          </a>
+        )}
+
         <div style={{ flex: 1 }} />
 
         {/* Parrainage école (accès offert) */}
@@ -814,10 +827,15 @@ export default function Home() {
 
       {/* ── Layout : sidebar gauche + contenu ────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 0 : 28, maxWidth: 1300, margin: '0 auto', padding: isMobile ? '16px 0 88px' : '28px 28px 80px' }}>
-        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} showEspace={isStudent} />
+        <Sidebar section={section} setSection={setSection} isMobile={isMobile} showEncadrement={isEncadrant} showEspace={isStudent && !IS_ECOLE} />
         <main style={{ flex: 1, minWidth: 0, maxWidth: 1180, padding: isMobile ? '0 16px' : 0 }}>
 
-        {section === 'home' && (
+        {section === 'home' && IS_ECOLE && (
+          <AccueilEcole cvList={cvList} firstName={firstName} isStudent={isStudent} isMobile={isMobile}
+            navigate={navigate} onModify={handleModify} onVoirTout={() => setSection('cv')} />
+        )}
+
+        {section === 'home' && !IS_ECOLE && (
         <>
         {/* Tableau de bord */}
         <div style={{ marginBottom: isMobile ? 16 : 22 }}>
@@ -962,7 +980,7 @@ export default function Home() {
           gap: isMobile ? 10 : 14,
           marginBottom: isMobile ? 24 : 36,
         }}>
-          {HOME_MODULES.map((m, i) => (
+          {modulesAccueil(HOME_MODULES).map((m, i) => (
             <div key={m.route} onClick={() => navigate(m.route)}
               style={{
                 display: 'flex', flexDirection: 'column', gap: 7,
@@ -1334,7 +1352,7 @@ export default function Home() {
                 <div style={{ fontSize: 15.5, fontWeight: 800, color: C.ink }}>{plan?.emoji} Forfait {plan?.label}</div>
                 {isSchool && orgName && <div style={{ fontSize: 12.5, color: C.ok, fontWeight: 700, marginTop: 2 }}>🎓 Accès offert par {orgName}</div>}
               </div>
-              {!isSchool && nextPlan && (
+              {!isSchool && !IS_ECOLE && nextPlan && (
                 <button onClick={() => navigate('/pricing')} style={{ background: C.bluePrimary, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'Manrope,sans-serif', whiteSpace: 'nowrap' }}>Passer à {nextPlan}</button>
               )}
             </div>

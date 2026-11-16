@@ -1,4 +1,5 @@
 ﻿// ─── BANANA SCORE — Gamification du CV ───────────────────────────────────────
+import { IS_ECOLE } from './appMode';
 
 export const SCORE_RULES = [
   // Identité — 28 pts
@@ -67,7 +68,16 @@ const TIPS = {
   interets:      'Ajoute 2 centres d\'intérêt minimum',
 };
 
-const TOTAL_MAX = SCORE_RULES.reduce((s, r) => s + r.pts, 0);
+
+/**
+ * Règles de la version école : IDENTIQUES à la complétude de l'espace
+ * étudiant du CRM (web-v2 `lib/cvGenerator/cvScore.ts`), qui décide de
+ * l'accès aux offres de l'école. Sans LinkedIn (onglet à part dans l'espace)
+ * et photo à 4 points (jamais plus qu'une seconde expérience).
+ */
+const SCORE_RULES_ECOLE = SCORE_RULES
+  .filter(r => r.id !== 'linkedin')
+  .map(r => (r.id === 'photo' ? { ...r, pts: 4 } : r));
 
 export const BANANA_LEVELS = [
   { min:0,   max:25,  emoji:'🫙', label:'Vide',          color:'#dc2626' },
@@ -81,16 +91,18 @@ export function getBananaLevel(pct) {
   return BANANA_LEVELS.find(l => pct >= l.min && pct < l.max) || BANANA_LEVELS[BANANA_LEVELS.length - 1];
 }
 
-export function calcBananaScore(cvData, extra = {}) {
-  if (!cvData) return { score: 0, pct: 0, max: TOTAL_MAX, rules: [], tips: [] };
+export function calcBananaScore(cvData, extra = {}, { ecole = IS_ECOLE } = {}) {
+  const regles = ecole ? SCORE_RULES_ECOLE : SCORE_RULES;
+  const max = regles.reduce((s, r) => s + r.pts, 0);
+  if (!cvData) return { score: 0, pct: 0, max, rules: [], tips: [] };
 
-  const rules = SCORE_RULES.map(rule => ({
+  const rules = regles.map(rule => ({
     ...rule,
     achieved: Boolean(rule.check(cvData, extra)),
   }));
 
   const score = rules.reduce((s, r) => s + (r.achieved ? r.pts : 0), 0);
-  const pct   = Math.min(100, Math.round((score / TOTAL_MAX) * 100));
+  const pct   = Math.min(100, Math.round((score / max) * 100));
 
   const tips = rules
     .filter(r => !r.achieved)
@@ -98,5 +110,5 @@ export function calcBananaScore(cvData, extra = {}) {
     .slice(0, 3)
     .map(r => ({ id: r.id, pts: r.pts, tip: TIPS[r.id] || 'Complète cette section' }));
 
-  return { score, pct, max: TOTAL_MAX, rules, tips };
+  return { score, pct, max, rules, tips };
 }

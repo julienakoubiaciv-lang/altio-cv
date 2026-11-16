@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './hooks/useTheme.jsx';
 import { SettingsProvider } from './hooks/useSettings.jsx';
 import { AuthProvider, useAuth } from './hooks/useAuth.jsx';
@@ -7,6 +7,8 @@ import { UpgradeModalProvider } from './components/UpgradeModal.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import ProgressSync from './components/ProgressSync.jsx';
+import EcoleGate from './components/EcoleGate.jsx';
+import { IS_ECOLE } from './lib/appMode';
 
 // SettingsPanel chargé en lazy : il n'est jamais visible au premier rendu
 // (s'ouvre uniquement sur clic icône ⚙) → hors du bundle initial
@@ -27,6 +29,10 @@ const Auth          = lazy(() => import('./pages/Auth.jsx'));
 const Pricing       = lazy(() => import('./pages/Pricing.jsx'));
 const Admin         = lazy(() => import('./pages/Admin.jsx'));
 const Interview     = lazy(() => import('./pages/Interview.jsx'));
+// Version école : le simulateur est dans l'espace étudiant (lib/espaceEtudiant.js),
+// et l'élève crée ses CV avec l'assistant en trois étapes (NouveauCvEcole).
+const NouveauCvEcole = lazy(() => import('./pages/NouveauCvEcole.jsx'));
+const EntretienEcole = lazy(() => import('./pages/EntretienEcole.jsx'));
 const Jobs          = lazy(() => import('./pages/Jobs.jsx'));
 const Journey       = lazy(() => import('./pages/Journey.jsx'));
 const LetterWriter  = lazy(() => import('./pages/LetterWriter.jsx'));
@@ -78,12 +84,12 @@ function GatedRoutes() {
     );
   }
 
-  return (
+  const routes = (
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/"            element={<Home />} />
         <Route path="/auth"        element={<Auth />} />
-        <Route path="/generate"    element={<Generate />} />
+        <Route path="/generate"    element={IS_ECOLE ? <NouveauCvEcole /> : <Generate />} />
         <Route path="/bulk"        element={<Bulk />} />
         <Route path="/editor"      element={<Editor />} />
         <Route path="/editor/:id"  element={<Editor />} />
@@ -91,9 +97,10 @@ function GatedRoutes() {
         <Route path="/profils"            element={<Profiles />} />
         <Route path="/profils/nouveau"    element={<ProfileWizard />} />
         <Route path="/profils/:id/editer" element={<ProfileWizard />} />
-        <Route path="/pricing"            element={<Pricing />} />
+        {/* Pas de tarifs dans la version école : l'accès y est fourni par l'école. */}
+        <Route path="/pricing"            element={IS_ECOLE ? <Navigate to="/" replace /> : <Pricing />} />
         <Route path="/admin"              element={<Admin />} />
-        <Route path="/entretien"          element={<Interview />} />
+        <Route path="/entretien"          element={IS_ECOLE ? <EntretienEcole /> : <Interview />} />
         <Route path="/metiers"            element={<Jobs />} />
         <Route path="/parcours"           element={<Journey />} />
         <Route path="/lettre"             element={<LetterWriter />} />
@@ -107,9 +114,14 @@ function GatedRoutes() {
         <Route path="/confidentialite"    element={<Confidentialite />} />
         <Route path="/mentions-legales"   element={<MentionsLegales />} />
         <Route path="/cgu"                element={<CGU />} />
+        {/* Adresse inconnue → accueil, plutôt qu'une page blanche. */}
+        <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
   );
+
+  // Version école : connexion avec le compte CRM obligatoire (cf. EcoleGate).
+  return IS_ECOLE ? <EcoleGate fallback={<PageLoader />}>{routes}</EcoleGate> : routes;
 }
 
 export default function App() {

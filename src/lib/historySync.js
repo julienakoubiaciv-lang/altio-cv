@@ -191,3 +191,15 @@ export async function deleteHistory(id) {
 export function getHistorySync() {
   return lsGet();
 }
+
+/**
+ * Un CV par son id : d'abord le cache local, sinon Supabase (getHistory
+ * remplit le cache au passage). Sert à l'éditeur ouvert directement sur
+ * `/editor/:id` — lien envoyé depuis l'espace étudiant du CRM, sur un
+ * appareil où le générateur n'a encore rien mis en cache. `null` si le CV
+ * n'existe pas (ou n'appartient pas à l'utilisateur connecté, RLS).
+ */
+export async function findHistoryEntry(id) {
+  const trouve = (arr) => arr.find((h) => String(h.id) === String(id)) ?? null;
+  return trouve(lsGet()) ?? trouve(await getHistory());
+}

@@ -6,6 +6,10 @@ import './index.css';
 import './styles/altio-theme.css';
 import { initMonitoring } from './lib/monitoring';
 import { consumeOrgInviteFromURL } from './lib/orgAccess';
+import { IS_ECOLE } from './lib/appMode';
+
+// Version école : palette alignée sur l'espace étudiant du CRM (altio-theme.css).
+if (IS_ECOLE) document.documentElement.dataset.appMode = 'ecole';
 
 // Initialise Sentry + PostHog (no-op si les env vars sont absentes)
 initMonitoring();
